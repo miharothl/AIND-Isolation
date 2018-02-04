@@ -35,7 +35,13 @@ def custom_score(game, player):
         The heuristic value of the current game state to the specified player.
     """
     # TODO: finish this function!
-    raise NotImplementedError
+    if game.is_loser(player):
+        return float("-inf")
+
+    if game.is_winner(player):
+        return float("inf")
+
+    return float(len(game.get_legal_moves(player)))
 
 
 def custom_score_2(game, player):
@@ -120,6 +126,7 @@ class IsolationPlayer:
 
 
 class MinimaxPlayer(IsolationPlayer):
+
     """Game-playing agent that chooses a move using depth-limited minimax
     search. You must finish and test this player to make sure it properly uses
     minimax to return a good move before the search time limit expires.
@@ -212,9 +219,82 @@ class MinimaxPlayer(IsolationPlayer):
         if self.time_left() < self.TIMER_THRESHOLD:
             raise SearchTimeout()
 
-        # TODO: finish this function!
-        raise NotImplementedError
+        current_depth = 0
 
+        minimax_move = self.minimax_decision(game, depth, current_depth)
+
+        return minimax_move
+
+    def terminal_test(self, gameState):
+        """ Return True if the game is over for the active player
+        and False otherwise.
+        """
+        if self.time_left() < self.TIMER_THRESHOLD:
+            raise SearchTimeout()
+
+        return not bool(gameState.get_legal_moves())  # by Assumption 1
+
+
+    def min_value(self, gameState, depth, current_depth):
+        """ Return the value for a win (+1) if the game is over,
+        otherwise return the minimum value over all legal child
+        nodes.
+        """
+        if self.time_left() < self.TIMER_THRESHOLD:
+            raise SearchTimeout()
+
+        if self.terminal_test(gameState):
+            return 1  # by Assumption 2
+        v = float("inf")
+
+        current_depth = current_depth + 1
+        if current_depth >= depth:
+            return self.score(gameState, self)
+
+        for m in gameState.get_legal_moves():
+            v = min(v, self.max_value(gameState.forecast_move(m), depth, current_depth))
+        return v
+
+
+    def max_value(self, gameState, depth, current_depth):
+        """ Return the value for a loss (-1) if the game is over,
+        otherwise return the maximum value over all legal child
+        nodes.
+        """
+        if self.time_left() < self.TIMER_THRESHOLD:
+            raise SearchTimeout()
+
+        if self.terminal_test(gameState):
+            return -1  # by assumption 2
+        v = float("-inf")
+
+        current_depth = current_depth + 1
+        if current_depth >= depth:
+            return self.score(gameState, self)
+
+        for m in gameState.get_legal_moves():
+            v = max(v, self.min_value(gameState.forecast_move(m), depth, current_depth))
+        return v
+
+    def minimax_decision(self, gameState, depth, current_depth):
+        """ Return the move along a branch of the game tree that
+        has the best possible value.  A move is a pair of coordinates
+        in (column, row) order corresponding to a legal move for
+        the searching player.
+
+        You can ignore the special case of calling this function
+        from a terminal state.
+        """
+        if self.time_left() < self.TIMER_THRESHOLD:
+            raise SearchTimeout()
+
+        if len(gameState.get_legal_moves()) == 0:
+            return (-1,-1)
+
+        current_depth = 0
+        # The built in `max()` function can be used as argmax!
+        return max(gameState.get_legal_moves(),
+                   key=lambda m: self.min_value(gameState.forecast_move(m), depth, current_depth))
 
 class AlphaBetaPlayer(IsolationPlayer):
     """Game-playing agent that chooses a move using iterative deepening minimax
